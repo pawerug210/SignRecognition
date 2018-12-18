@@ -1,0 +1,16 @@
+scripts/Output
+*.pyc
+doc/.*
+partner/.*
+.settings/
+doc
+tests/test.py
+tests/format_db.py
+nohup.out
+crawler/uber.py
+.idea/*
+.vscode/*
+broadcast.log
+last_commit.txt
+venv
+Data
