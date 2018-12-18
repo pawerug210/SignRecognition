@@ -1,16 +1,17 @@
 import Common
 from DataPreprocessing import resize
+from DataPreprocessing import labelsToOutputs
 import tensorflow as tf
 import CNN
 
 #training settings
-iterations = 10
+iterations = 1000
 batchSize = 64
-learningRate = 0.01
+learningRate = 0.001
 
 #CNN settings
-N = range(0, 10)
-samplesNumber = None
+classes = range(0, 10)
+samplesNumber = 100
 inputImgSize = (16, 16)
 # filter (3x3), 3 channels (RGB), number of filters applied
 filtersShape = [(3, 3, 3, 32),
@@ -22,11 +23,11 @@ biases = {
     'bc2': tf.get_variable('B1', shape=(64), initializer=tf.contrib.layers.xavier_initializer()),
     'bc3': tf.get_variable('B2', shape=(128), initializer=tf.contrib.layers.xavier_initializer()),
     'bd1': tf.get_variable('B3', shape=(128), initializer=tf.contrib.layers.xavier_initializer()),
-    'out': tf.get_variable('B4', shape=(len(N)), initializer=tf.contrib.layers.xavier_initializer()),
+    'out': tf.get_variable('B4', shape=(len(classes)), initializer=tf.contrib.layers.xavier_initializer()),
 }
 
 kwargs = {'inputImgSize': inputImgSize,
-          'outputsNumber': len(N),
+          'outputsNumber': len(classes),
           'convLayersNumber': 3,
           'filtersShape': filtersShape,
           'bias': biases,
@@ -34,21 +35,14 @@ kwargs = {'inputImgSize': inputImgSize,
           }
 
 
-images, labels = Common.readTrafficSigns('../Data/GTSRB_Final_Training_Images/GTSRB/Final_Training/Images', N, samplesNumber)
+images, labels = Common.readTrafficSigns('../Data/GTSRB_Final_Training_Images/GTSRB/Final_Training/Images', classes, samplesNumber)
 images = resize(images, inputImgSize)
 # Common.displayImagesSample(images)
 # Common.displayLabelsHist(labels)
+outputs, mapping = labelsToOutputs(classes, labels)
 cNN = CNN.CNN(**kwargs)
-batchesX = []
-batchesY = []
-for batch in range(0, len(images) // batchSize, batchSize):
-    batchesX.append(images[batch: batch + batchSize])
-    batchOutputs = []
-    for desiredOutput in labels[batch: batch + batchSize]:
-        zeros = [0] * len(N)
-        zeros[int(desiredOutput)] = 1
-        batchOutputs.append(zeros)
-    batchesY.append(batchOutputs)
+batchesX = [images[batch: batch + batchSize] for batch in range(0, len(images) - batchSize, batchSize)]
+batchesY = [outputs[batch: batch + batchSize] for batch in range(0, len(outputs) - batchSize, batchSize)]
 
 if len(batchesX) != len(batchesY):
     raise Exception
@@ -77,9 +71,8 @@ with tf.Session() as session:
             op = cNN.run(session, optimizer, trainBatchX, trainBatchY)
             loss, acc = cNN.run(session, [cost, accuracy], trainBatchX, trainBatchY)
             # test_acc, valid_loss = cNN.run(session, testBatchX, testBatchY)
-            print("Iter " + str(i) + ", Loss= " + \
-                  "{:.6f}".format(loss) + ", Training Accuracy= " + \
-                  "{:.5f}".format(acc))
-            print("Optimization Finished!")
+        print("Iter " + str(i) + ", Loss= " + \
+              "{:.6f}".format(loss) + ", Training Accuracy= " + \
+              "{:.5f}".format(acc))
 
 
