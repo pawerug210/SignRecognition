@@ -1,17 +1,21 @@
 import Common
 from DataPreprocessing import resize
 from DataPreprocessing import labelsToOutputs
+from DataPreprocessing import createMapping
 import tensorflow as tf
 import CNN
 
 #training settings
 iterations = 1000
-batchSize = 64
+batchSize = 32
 learningRate = 0.001
 
+#testing settings
+testSamplesNumber = 20
+
 #CNN settings
-classes = range(0, 10)
-samplesNumber = 100
+classes = range(0, 2)
+samplesNumber = 20
 inputImgSize = (16, 16)
 # filter (3x3), 3 channels (RGB), number of filters applied
 filtersShape = [(3, 3, 3, 32),
@@ -34,12 +38,25 @@ kwargs = {'inputImgSize': inputImgSize,
           'learningRate': learningRate
           }
 
-
+# test
 images, labels = Common.readTrafficSigns('../Data/GTSRB_Final_Training_Images/GTSRB/Final_Training/Images', classes, samplesNumber)
 images = resize(images, inputImgSize)
+outputs = labelsToOutputs(classes, labels)
+
+# test analysis
 # Common.displayImagesSample(images)
 # Common.displayLabelsHist(labels)
-outputs, mapping = labelsToOutputs(classes, labels)
+
+# train
+testImages, testLabels = Common.readTestImages('../Data/GTSRB_Final_Test_Images/GTSRB/Final_Test/Images', classes, testSamplesNumber)
+testImages = resize(testImages, inputImgSize)
+testOutputs = labelsToOutputs(classes, testLabels)
+
+if len(testImages) != len(testOutputs):
+    raise Exception
+
+classesMapping = createMapping(classes)
+
 cNN = CNN.CNN(**kwargs)
 batchesX = [images[batch: batch + batchSize] for batch in range(0, len(images) - batchSize, batchSize)]
 batchesY = [outputs[batch: batch + batchSize] for batch in range(0, len(outputs) - batchSize, batchSize)]
@@ -70,9 +87,10 @@ with tf.Session() as session:
             trainBatchY = batchesY[k]
             op = cNN.run(session, optimizer, trainBatchX, trainBatchY)
             loss, acc = cNN.run(session, [cost, accuracy], trainBatchX, trainBatchY)
-            # test_acc, valid_loss = cNN.run(session, testBatchX, testBatchY)
         print("Iter " + str(i) + ", Loss= " + \
               "{:.6f}".format(loss) + ", Training Accuracy= " + \
               "{:.5f}".format(acc))
+        test_acc, valid_loss = cNN.run(session, [accuracy, cost], testImages, testOutputs)
+        print("Testing Accuracy:", "{:.5f}".format(test_acc))
 
 
