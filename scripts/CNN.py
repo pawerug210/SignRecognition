@@ -32,7 +32,7 @@ class CNN(object):
     def conv2d(self, inputs_batch, filters, b, strides=1):
         # Conv2D wrapper, with bias and relu activation
         inputs_batch = tf.nn.conv2d(inputs_batch, filters, strides=[1, strides, strides, 1], padding='SAME')
-        # inputs_batch = tf.nn.bias_add(inputs_batch, b)
+        inputs_batch = tf.nn.bias_add(inputs_batch, b)
         return tf.nn.relu(inputs_batch)
 
     def maxpool2d(self, x, k=2):
@@ -59,11 +59,11 @@ class CNN(object):
         # Fully connected layer
         # Reshape conv2 output to fit fully connected layer input
         fc1 = tf.reshape(conv2, [-1, filters['wd1'].get_shape().as_list()[0]])
-        fc1 = tf.matmul(fc1, filters['wd1'])
+        fc1 = tf.add(tf.matmul(fc1, filters['wd1']), biases['bd1'])
         fc1 = tf.nn.relu(fc1)
         # Output, class prediction
         # finally we multiply the fully connected layer with the weights and add a bias term.
-        out = tf.matmul(fc1, filters['out'])
+        out = tf.add(tf.matmul(fc1, filters['out']), biases['out'])
         return out
 
     def run(self, session, fetches, batchX, batchY):
