@@ -6,8 +6,11 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 import CNN
 
+#regularization
+beta = 0.01
+
 #training settings
-epochs = 100
+epochs = 150
 batchSize = 32
 learningRate = 0.001
 
@@ -71,11 +74,14 @@ batchesY = [outputs[batch: batch + batchSize] for batch in range(0, len(outputs)
 if len(batchesX) != len(batchesY):
     raise Exception
 
-pred = cNN.conv_net(cNN.xPlaceholder)
-cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=pred, labels=cNN.yPlaceholder))
-optimizer = tf.train.AdamOptimizer(learning_rate=learningRate).minimize(cost)
+pred = cNN.conv_net(cNN.xPlaceholder, cNN.keep_prob)
+loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=pred, labels=cNN.yPlaceholder))
 # Here you check whether the index of the maximum value of the predicted image is equal to the actual labelled image. and both will be a column vector.
 correct_prediction = tf.equal(tf.argmax(pred, 1), tf.argmax(cNN.yPlaceholder, 1))
+regularizer = tf.nn.l2_loss(cNN.WEIGHTS['wc1']) + tf.nn.l2_loss(cNN.WEIGHTS['wc2'])+ \
+                tf.nn.l2_loss(cNN.WEIGHTS['wd1']) + tf.nn.l2_loss(cNN.WEIGHTS['out'])
+loss = tf.reduce_mean(loss + beta * regularizer)
+optimizer = tf.train.AdamOptimizer(learning_rate=learningRate).minimize(loss)
 # calculate accuracy across all the given images and average them out.
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
@@ -94,16 +100,16 @@ with tf.Session() as session:
         for k in range(len(batchesX)):
             trainBatchX = batchesX[k]
             trainBatchY = batchesY[k]
-            op = cNN.run(session, optimizer, trainBatchX, trainBatchY)
-            loss, acc = cNN.run(session, [cost, accuracy], trainBatchX, trainBatchY)
+            op = cNN.run(session, optimizer, trainBatchX, trainBatchY, 0.5)
+            iteration_loss, acc = cNN.run(session, [loss, accuracy], trainBatchX, trainBatchY, 1.0)
             train_accuracy.append(acc)
-            train_loss.append(loss)
+            train_loss.append(iteration_loss)
         avg_train_loss = sum(train_loss) / len(train_loss)
         avg_train_acc = sum(train_accuracy) / len(train_accuracy)
         print("Iter " + str(i) + ", Loss= " + \
               "{:.6f}".format(avg_train_loss) + ", Training Accuracy= " + \
               "{:.5f}".format(avg_train_acc))
-        valid_loss, test_acc = cNN.run(session, [cost, accuracy], testImages, testOutputs)
+        valid_loss, test_acc = cNN.run(session, [loss, accuracy], testImages, testOutputs, 1.0)
         print("Testing Accuracy:", "{:.5f}".format(test_acc))
         print("Testing Loss:", "{:.5f}".format(valid_loss))
         train_accuracy_global.append(avg_train_acc * 100.0)
