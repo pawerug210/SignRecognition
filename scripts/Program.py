@@ -53,6 +53,7 @@ testImages, testLabels = Common.readTestImages('../Data/GTSRB_Final_Test_Images/
 testImages = resize(testImages, inputImgSize)
 testOutputs = labelsToOutputs(classes, testLabels)
 
+# Common.displayImagesSize(images, testImages)
 # Common.displayLabelsHist(testLabels)
 # Common.displayImagesSample(testImages)
 
@@ -100,7 +101,7 @@ with tf.Session() as session:
             train_loss.append(loss)
         avg_train_loss = sum(train_loss) / len(train_loss)
         avg_train_acc = sum(train_accuracy) / len(train_accuracy)
-        print("Iter " + str(i) + ", Loss= " + \
+        print("Epoch " + str(i) + ", Loss= " + \
               "{:.6f}".format(avg_train_loss) + ", Training Accuracy= " + \
               "{:.5f}".format(avg_train_acc))
         valid_loss, test_acc = cNN.run(session, [cost, accuracy], testImages, testOutputs)
@@ -111,23 +112,7 @@ with tf.Session() as session:
         test_accuracy.append(test_acc * 100.0)
         test_loss.append(valid_loss)
 
-plt.subplot(1, 2, 1)
-plt.plot(range(0, epochs), train_loss_global, 'b', label='train')
-plt.plot(range(0, epochs), test_loss, 'r', label='test')
-plt.xlabel('epoch')
-plt.ylabel('loss')
-plt.title('Loss')
-plt.legend(loc='upper left')
-
-plt.subplot(1, 2, 2)
-plt.plot(range(0, epochs), train_accuracy_global, 'b', label='train')
-plt.plot(range(0, epochs), test_accuracy, 'r', label='test')
-plt.xlabel('epoch')
-plt.ylabel('accuracy [%]')
-plt.title('Accuracy')
-plt.legend(loc='upper left')
-
-plt.show()
+Common.displayResults(epochs, train_accuracy_global, train_loss_global, test_accuracy, test_loss)
 
 
 

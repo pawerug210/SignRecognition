@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 from DataPreprocessing import crop
 from collections import Counter
+import math
 import csv
 
 
@@ -52,13 +53,17 @@ def readTestImages(rootpath, classes, samplesNumber=None):
 
 def displayImagesSample(images):
     fig = plt.figure(figsize=(8, 8))
-    columns = 5
-    rows = 5
+    columns = math.ceil(math.sqrt(len(images)))
+    rows = columns
     iterations = columns * rows + 1
     images = images[:iterations]
     for i in range(1, iterations):
+        if i > len(images):
+            break
         img = images[i - 1]
         fig.add_subplot(rows, columns, i)
+        plt.xticks([])
+        plt.yticks([])
         plt.imshow(img)
     plt.show()
 
@@ -67,6 +72,38 @@ def displayLabelsHist(labels):
     labelsCountsDict = Counter(labels)
     x = list(map(int, labelsCountsDict.keys()))
     y = list(labelsCountsDict.values())
+    plt.xlabel('Class id')
+    plt.ylabel('Samples number')
     plt.bar(x, y)
     plt.xticks(range(0, len(x)))
+    plt.show()
+
+
+def displayImagesSize(trainingImages, testImages):
+    plt.plot([x.shape[0] for x in trainingImages], [x.shape[1] for x in trainingImages], 'r.', label='train')
+    plt.plot([x.shape[0] for x in testImages], [x.shape[1] for x in testImages], 'b.', label='test')
+    plt.xticks(range(0, 220, 5))
+    plt.xlabel('width [px]')
+    plt.ylabel('height [px]')
+    plt.legend(loc='upper left')
+    plt.show()
+
+
+def displayResults(epochs, train_accuracy, train_loss, test_accuracy, test_loss):
+    plt.subplot(1, 2, 1)
+    plt.plot(range(0, epochs), train_loss, 'b', label='train')
+    plt.plot(range(0, epochs), test_loss, 'r', label='test')
+    plt.xlabel('epoch')
+    plt.ylabel('loss')
+    plt.title('Loss')
+    plt.legend(loc='upper left')
+
+    plt.subplot(1, 2, 2)
+    plt.plot(range(0, epochs), train_accuracy, 'b', label='train')
+    plt.plot(range(0, epochs), test_accuracy, 'r', label='test')
+    plt.xlabel('epoch')
+    plt.ylabel('accuracy [%]')
+    plt.title('Accuracy')
+    plt.legend(loc='upper left')
+
     plt.show()
