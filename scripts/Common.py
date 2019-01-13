@@ -1,8 +1,10 @@
 import matplotlib.pyplot as plt
 from DataPreprocessing import crop
 from collections import Counter
+import numpy as np
 import math
 import csv
+import random
 
 
 def readTrafficSigns(rootpath, classes, samplesNumber=None):
@@ -107,3 +109,27 @@ def displayResults(epochs, train_accuracy, train_loss, test_accuracy, test_loss)
     plt.legend(loc='upper left')
 
     plt.show()
+
+def displayClassificationPlot(expectedToClassifiedMap):
+    correct = []
+    wrong = []
+    classes = []
+    for _class in expectedToClassifiedMap.keys():
+        classCorrect = expectedToClassifiedMap[_class].count(_class) / len(expectedToClassifiedMap[_class])
+        classWrong = 1.0 - classCorrect
+        correct.append(classCorrect)
+        wrong.append(classWrong)
+        classes.append(_class)
+    barWidth = 0.2
+    indexes = np.arange(len(correct))
+    plt.bar(indexes, correct, barWidth, color='g')
+    plt.bar(indexes + barWidth, wrong, barWidth, color='r')
+    plt.xticks(indexes, classes)
+    plt.show()
+
+def shuffle(images, labels):
+    combined = list(zip(images, labels))
+    random.shuffle(combined)
+
+    images[:], labels[:] = zip(*combined)
+    return images, labels

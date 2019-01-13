@@ -2,20 +2,20 @@ import Common
 from DataPreprocessing import resize
 from DataPreprocessing import labelsToOutputs
 from DataPreprocessing import createMapping
-import matplotlib.pyplot as plt
+import Helper as help
 import tensorflow as tf
 import CNN
 
 #training settings
-epochs = 100
-batchSize = 32
+epochs = 60
+batchSize = 64
 learningRate = 0.001
 
 #testing settings
-testSamplesNumber = 20
+testSamplesNumber = 50
 
 #CNN settings
-classes = range(10, 20)
+classes = range(10, 30)
 samplesNumber = 200
 inputImgSize = (16, 16)
 # filter (3x3), 3 channels (RGB), number of filters applied
@@ -44,7 +44,8 @@ images, labels = Common.readTrafficSigns('../Data/GTSRB_Final_Training_Images/GT
 images = resize(images, inputImgSize)
 outputs = labelsToOutputs(classes, labels)
 
-# test analysis
+images, outputs = Common.shuffle(images, outputs)
+# analysis
 # Common.displayImagesSample(images)
 # Common.displayLabelsHist(labels)
 
@@ -76,7 +77,11 @@ pred = cNN.conv_net(cNN.xPlaceholder)
 cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=pred, labels=cNN.yPlaceholder))
 optimizer = tf.train.AdamOptimizer(learning_rate=learningRate).minimize(cost)
 # Here you check whether the index of the maximum value of the predicted image is equal to the actual labelled image. and both will be a column vector.
-correct_prediction = tf.equal(tf.argmax(pred, 1), tf.argmax(cNN.yPlaceholder, 1))
+# todo specify variable so it is evaluated only once /?/
+classified_indexes = tf.argmax(pred, 1)
+expected_indexes = tf.argmax(cNN.yPlaceholder, 1)
+expectedAndClassified = tf.stack([expected_indexes, classified_indexes], axis=1)
+correct_prediction = tf.equal(expected_indexes, classified_indexes)
 # calculate accuracy across all the given images and average them out.
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
@@ -97,6 +102,7 @@ with tf.Session() as session:
             trainBatchY = batchesY[k]
             op = cNN.run(session, optimizer, trainBatchX, trainBatchY)
             loss, acc = cNN.run(session, [cost, accuracy], trainBatchX, trainBatchY)
+            # print(help.createClassifiedAsList(expToClass))
             train_accuracy.append(acc)
             train_loss.append(loss)
         avg_train_loss = sum(train_loss) / len(train_loss)
@@ -104,14 +110,14 @@ with tf.Session() as session:
         print("Epoch " + str(i) + ", Loss= " + \
               "{:.6f}".format(avg_train_loss) + ", Training Accuracy= " + \
               "{:.5f}".format(avg_train_acc))
-        valid_loss, test_acc = cNN.run(session, [cost, accuracy], testImages, testOutputs)
+        valid_loss, test_acc, expToClass = cNN.run(session, [cost, accuracy, expectedAndClassified], testImages, testOutputs)
         print("Testing Accuracy:", "{:.5f}".format(test_acc))
         print("Testing Loss:", "{:.5f}".format(valid_loss))
         train_accuracy_global.append(avg_train_acc * 100.0)
         train_loss_global.append(avg_train_loss)
         test_accuracy.append(test_acc * 100.0)
         test_loss.append(valid_loss)
-
+Common.displayClassificationPlot(help.createClassifiedAsList(expToClass))
 Common.displayResults(epochs, train_accuracy_global, train_loss_global, test_accuracy, test_loss)
 
 
