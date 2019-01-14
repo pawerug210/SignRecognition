@@ -10,7 +10,7 @@ import CNN
 beta = 0.01
 
 #training settings
-epochs = 120
+epochs = 50
 batchSize = 512
 learningRate = 0.001
 
@@ -23,20 +23,18 @@ samplesNumber = 200
 inputImgSize = (16, 16)
 # filter (3x3), 3 channels (RGB), number of filters applied
 filtersShape = [(3, 3, 3, 32),
-                (3, 3, 32, 64),
-                (3, 3, 64, 128)]
+                (3, 3, 32, 64)]
 
 biases = {
     'bc1': tf.get_variable('B0', shape=(32), initializer=tf.contrib.layers.xavier_initializer()),
     'bc2': tf.get_variable('B1', shape=(64), initializer=tf.contrib.layers.xavier_initializer()),
-    'bc3': tf.get_variable('B2', shape=(128), initializer=tf.contrib.layers.xavier_initializer()),
-    'bd1': tf.get_variable('B3', shape=(64), initializer=tf.contrib.layers.xavier_initializer()),
-    'out': tf.get_variable('B4', shape=(len(classes)), initializer=tf.contrib.layers.xavier_initializer()),
+    'bd1': tf.get_variable('B2', shape=(64), initializer=tf.contrib.layers.xavier_initializer()),
+    'out': tf.get_variable('B3', shape=(len(classes)), initializer=tf.contrib.layers.xavier_initializer()),
 }
 
 kwargs = {'inputImgSize': inputImgSize,
           'outputsNumber': len(classes),
-          'convLayersNumber': 3,
+          'convLayersNumber': 2,
           'filtersShape': filtersShape,
           'bias': biases,
           'learningRate': learningRate
