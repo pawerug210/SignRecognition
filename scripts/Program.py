@@ -10,7 +10,7 @@ import CNN
 beta = 0.01
 
 #training settings
-epochs = 50
+epochs = 100
 batchSize = 512
 learningRate = 0.001
 
@@ -36,8 +36,7 @@ kwargs = {'inputImgSize': inputImgSize,
           'outputsNumber': len(classes),
           'convLayersNumber': 2,
           'filtersShape': filtersShape,
-          'bias': biases,
-          'learningRate': learningRate
+          'bias': biases
           }
 
 # test
@@ -76,17 +75,14 @@ if len(batchesX) != len(batchesY):
 
 pred = cNN.conv_net(cNN.xPlaceholder, cNN.keep_prob)
 loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=pred, labels=cNN.yPlaceholder))
-# Here you check whether the index of the maximum value of the predicted image is equal to the actual labelled image. and both will be a column vector.
-# todo specify variable so it is evaluated only once /?/
 classified_indexes = tf.argmax(pred, 1)
 expected_indexes = tf.argmax(cNN.yPlaceholder, 1)
 expectedAndClassified = tf.stack([expected_indexes, classified_indexes], axis=1)
 correct_prediction = tf.equal(expected_indexes, classified_indexes)
 regularizer = tf.nn.l2_loss(cNN.WEIGHTS['wc1']) + tf.nn.l2_loss(cNN.WEIGHTS['wc2'])+ \
-                tf.nn.l2_loss(cNN.WEIGHTS['wd1']) + tf.nn.l2_loss(cNN.WEIGHTS['out'])
+               tf.nn.l2_loss(cNN.WEIGHTS['wd1']) + tf.nn.l2_loss(cNN.WEIGHTS['out'])
 loss = tf.reduce_mean(loss + beta * regularizer)
 optimizer = tf.train.AdamOptimizer(learning_rate=learningRate).minimize(loss)
-# calculate accuracy across all the given images and average them out.
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
 init = tf.global_variables_initializer()
@@ -120,7 +116,7 @@ with tf.Session() as session:
         train_loss_global.append(avg_train_loss)
         test_accuracy.append(test_acc * 100.0)
         test_loss.append(valid_loss)
-Common.displayClassificationPlot(help.createClassifiedAsList(expToClass))
+Common.displayClassificationPlot(help.createClassifiedAsList(expToClass), classes)
 Common.displayResults(epochs, train_accuracy_global, train_loss_global, test_accuracy, test_loss)
 
 

@@ -110,21 +110,19 @@ def displayResults(epochs, train_accuracy, train_loss, test_accuracy, test_loss)
 
     plt.show()
 
-def displayClassificationPlot(expectedToClassifiedMap):
+def displayClassificationPlot(expectedToClassifiedMap, classes):
     correct = []
     wrong = []
-    classes = []
     for _class in expectedToClassifiedMap.keys():
         classCorrect = expectedToClassifiedMap[_class].count(_class) / len(expectedToClassifiedMap[_class])
         classWrong = 1.0 - classCorrect
         correct.append(classCorrect)
         wrong.append(classWrong)
-        classes.append(_class)
     barWidth = 0.2
     indexes = np.arange(len(correct))
     plt.bar(indexes, correct, barWidth, color='g')
     plt.bar(indexes + barWidth, wrong, barWidth, color='r')
-    plt.xticks(indexes, classes)
+    plt.xticks(indexes, list(classes))
     plt.show()
 
 def shuffle(images, labels):

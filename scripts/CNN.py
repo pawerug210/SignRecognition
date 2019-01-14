@@ -1,10 +1,8 @@
 import tensorflow as tf
 
-
-# todo builder
 class CNN(object):
 
-    def __init__(self, outputsNumber, convLayersNumber, inputImgSize, filtersShape, bias, learningRate):
+    def __init__(self, outputsNumber, convLayersNumber, inputImgSize, filtersShape, bias):
         if convLayersNumber != len(filtersShape):
             raise Exception
         self.OUTPUTS = outputsNumber
@@ -30,7 +28,7 @@ class CNN(object):
         return weights
 
     def conv2d(self, inputs_batch, filters, b, strides=1):
-        # Conv2D wrapper, with bias and relu activation
+        # conv2d, bias and relu activation
         inputs_batch = tf.nn.conv2d(inputs_batch, filters, strides=[1, strides, strides, 1], padding='SAME')
         inputs_batch = tf.nn.bias_add(inputs_batch, b)
         return tf.nn.relu(inputs_batch)
@@ -39,32 +37,24 @@ class CNN(object):
         return tf.nn.max_pool(x, ksize=[1, k, k, 1], strides=[1, k, k, 1], padding='SAME')
 
     def conv_net(self, input, keep_prob):
-        filters = self.WEIGHTS
-        biases = self.BIAS
-        # here we call the conv2d function we had defined above and pass the input image x, weights wc1 and bias bc1.
-        conv1 = self.conv2d(input, filters['wc1'], biases['bc1'])
-        # Max Pooling (down-sampling), this chooses the max value from a 2*2 matrix window and outputs a 8*8 matrix.
+        # first convolutional layer
+        conv1 = self.conv2d(input, self.WEIGHTS['wc1'], self.BIAS['bc1'])
+        # Pooling with filter size 2x2, outputs a 8x8 (down sampled 16x16).
         conv1 = self.maxpool2d(conv1, k=2)
 
-        # Convolution Layer
-        # here we call the conv2d function we had defined above and pass the input image x, weights wc2 and bias bc2.
-        conv2 = self.conv2d(conv1, filters['wc2'], biases['bc2'])
-        # Max Pooling (down-sampling), this chooses the max value from a 2*2 matrix window and outputs a 4*4 matrix.
+        # second convolutional layer
+        conv2 = self.conv2d(conv1, self.WEIGHTS['wc2'], self.BIAS['bc2'])
+        # Pooling with filter size 2x2, outputs a 4x4 (down sampled 8x8).
         conv2 = self.maxpool2d(conv2, k=2)
 
-        # conv3 = self.conv2d(conv2, filters['wc3'], biases['bc3'])
-        # Max Pooling (down-sampling), this chooses the max value from a 2*2 matrix window and outputs a 4*4.
-        # conv3 = self.maxpool2d(conv3, k=2)
-
         # Fully connected layer
-        # Reshape conv2 output to fit fully connected layer input
-        fc1 = tf.reshape(conv2, [-1, filters['wd1'].get_shape().as_list()[0]])
-        fc1 = tf.add(tf.matmul(fc1, filters['wd1']), biases['bd1'])
+        fc1 = tf.reshape(conv2, [-1, self.WEIGHTS['wd1'].get_shape().as_list()[0]])
+        fc1 = tf.add(tf.matmul(fc1, self.WEIGHTS['wd1']), self.BIAS['bd1'])
         fc1 = tf.nn.relu(fc1)
-        # Output, class prediction
-        # finally we multiply the fully connected layer with the weights and add a bias term.
+        # Dropout for some neurons
         dropout = tf.nn.dropout(fc1, keep_prob)
-        out = tf.add(tf.matmul(dropout, filters['out']), biases['out'])
+        # Output, class prediction
+        out = tf.add(tf.matmul(dropout, self.WEIGHTS['out']), self.BIAS['out'])
         return out
 
     def run(self, session, fetches, batchX, batchY, keep_prob):
