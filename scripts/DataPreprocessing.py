@@ -1,5 +1,4 @@
 import scipy.misc
-import numpy as np
 import tensorflow as tf
 
 
@@ -13,7 +12,6 @@ def resizeTF(images, size):
 
 
 def resize(images, size):
-    # todo yield
     resizedImages = []
     for image in images:
         resizedImages.append(scipy.misc.imresize(image, size))

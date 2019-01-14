@@ -93,7 +93,6 @@ with tf.Session() as session:
     train_accuracy_global = []
     test_loss = []
     test_accuracy = []
-    summary_writer = tf.summary.FileWriter('./Output', session.graph)
     for i in range(epochs):
         train_loss = []
         train_accuracy = []
