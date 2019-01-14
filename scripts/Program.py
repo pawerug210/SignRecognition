@@ -6,9 +6,12 @@ import Helper as help
 import tensorflow as tf
 import CNN
 
+#regularization
+beta = 0.01
+
 #training settings
-epochs = 60
-batchSize = 64
+epochs = 120
+batchSize = 512
 learningRate = 0.001
 
 #testing settings
@@ -73,15 +76,18 @@ batchesY = [outputs[batch: batch + batchSize] for batch in range(0, len(outputs)
 if len(batchesX) != len(batchesY):
     raise Exception
 
-pred = cNN.conv_net(cNN.xPlaceholder)
-cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=pred, labels=cNN.yPlaceholder))
-optimizer = tf.train.AdamOptimizer(learning_rate=learningRate).minimize(cost)
+pred = cNN.conv_net(cNN.xPlaceholder, cNN.keep_prob)
+loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=pred, labels=cNN.yPlaceholder))
 # Here you check whether the index of the maximum value of the predicted image is equal to the actual labelled image. and both will be a column vector.
 # todo specify variable so it is evaluated only once /?/
 classified_indexes = tf.argmax(pred, 1)
 expected_indexes = tf.argmax(cNN.yPlaceholder, 1)
 expectedAndClassified = tf.stack([expected_indexes, classified_indexes], axis=1)
 correct_prediction = tf.equal(expected_indexes, classified_indexes)
+regularizer = tf.nn.l2_loss(cNN.WEIGHTS['wc1']) + tf.nn.l2_loss(cNN.WEIGHTS['wc2'])+ \
+                tf.nn.l2_loss(cNN.WEIGHTS['wd1']) + tf.nn.l2_loss(cNN.WEIGHTS['out'])
+loss = tf.reduce_mean(loss + beta * regularizer)
+optimizer = tf.train.AdamOptimizer(learning_rate=learningRate).minimize(loss)
 # calculate accuracy across all the given images and average them out.
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
@@ -100,17 +106,16 @@ with tf.Session() as session:
         for k in range(len(batchesX)):
             trainBatchX = batchesX[k]
             trainBatchY = batchesY[k]
-            op = cNN.run(session, optimizer, trainBatchX, trainBatchY)
-            loss, acc = cNN.run(session, [cost, accuracy], trainBatchX, trainBatchY)
-            # print(help.createClassifiedAsList(expToClass))
+            op = cNN.run(session, optimizer, trainBatchX, trainBatchY, 0.5)
+            iteration_loss, acc = cNN.run(session, [loss, accuracy], trainBatchX, trainBatchY, 1.0)
             train_accuracy.append(acc)
-            train_loss.append(loss)
+            train_loss.append(iteration_loss)
         avg_train_loss = sum(train_loss) / len(train_loss)
         avg_train_acc = sum(train_accuracy) / len(train_accuracy)
         print("Epoch " + str(i) + ", Loss= " + \
               "{:.6f}".format(avg_train_loss) + ", Training Accuracy= " + \
               "{:.5f}".format(avg_train_acc))
-        valid_loss, test_acc, expToClass = cNN.run(session, [cost, accuracy, expectedAndClassified], testImages, testOutputs)
+        valid_loss, test_acc, expToClass = cNN.run(session, [loss, accuracy, expectedAndClassified], testImages, testOutputs, 1.0)
         print("Testing Accuracy:", "{:.5f}".format(test_acc))
         print("Testing Loss:", "{:.5f}".format(valid_loss))
         train_accuracy_global.append(avg_train_acc * 100.0)

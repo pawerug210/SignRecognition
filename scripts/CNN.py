@@ -14,7 +14,7 @@ class CNN(object):
         self.FILTERS_SHAPE = filtersShape
         self.xPlaceholder = tf.placeholder("float", [None] + list(inputImgSize) + [3])
         self.yPlaceholder = tf.placeholder("float", [None, outputsNumber])
-
+        self.keep_prob = tf.placeholder(tf.float32)
         self.WEIGHTS = self.initializeWeights()
 
     def setOutputsNumber(self, number):
@@ -38,7 +38,7 @@ class CNN(object):
     def maxpool2d(self, x, k=2):
         return tf.nn.max_pool(x, ksize=[1, k, k, 1], strides=[1, k, k, 1], padding='SAME')
 
-    def conv_net(self, input):
+    def conv_net(self, input, keep_prob):
         filters = self.WEIGHTS
         biases = self.BIAS
         # here we call the conv2d function we had defined above and pass the input image x, weights wc1 and bias bc1.
@@ -63,8 +63,9 @@ class CNN(object):
         fc1 = tf.nn.relu(fc1)
         # Output, class prediction
         # finally we multiply the fully connected layer with the weights and add a bias term.
-        out = tf.add(tf.matmul(fc1, filters['out']), biases['out'])
+        dropout = tf.nn.dropout(fc1, keep_prob)
+        out = tf.add(tf.matmul(dropout, filters['out']), biases['out'])
         return out
 
-    def run(self, session, fetches, batchX, batchY):
-        return session.run(fetches, feed_dict={self.xPlaceholder: batchX, self.yPlaceholder: batchY})
+    def run(self, session, fetches, batchX, batchY, keep_prob):
+        return session.run(fetches, feed_dict={self.xPlaceholder: batchX, self.yPlaceholder: batchY, self.keep_prob: keep_prob})
